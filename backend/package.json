@@ -10,9 +10,7 @@
         "type": "git",
         "url": "https://github.com/axendor/soupbet.git"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "author": "Campbell Gough",
     "bugs": {
         "email": "campbellwgough@gmail.com"
     },
