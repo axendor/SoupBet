@@ -1,0 +1,25 @@
+{
+    "name": "soupbet",
+    "description": "A vue.js and node.js app that handles simple pool style betting for Glen Waverley Hawks Best &amp; Fairest and vote count",
+    "version": "1.0.0",
+    "main": "server",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/axendor/soupbet.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "email": "campbellwgough@gmail.com"
+    },
+    "dependencies": {
+        "express": "4.17.1",
+        "body-parser": "1.19.0",
+        "node-adodb": "5.0.2"
+    },
+    "homepage": "https://github.com/axendor/soupbet"
+}
