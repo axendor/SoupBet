@@ -1,6 +1,19 @@
 <template>
-  <div>
+  <div class="board">
     <h4>{{market.name}}</h4>
+    <li>
+      <b-row v-bind:key="option.ID" v-for="option in market.options">
+        <b-col cols="9">
+          {{option.opt}}
+        </b-col>
+        <b-col cols="3" style="text-align:right;" v-if="option.betTotal > 0">
+          $ {{(market.betTotal/option.betTotal).toFixed(2)}}
+        </b-col>
+        <b-col cols="3" style="text-align:right;" v-if="option.betTotal <= 0">
+          -
+        </b-col>
+      </b-row>
+    </li>
   </div>
 </template>
 
@@ -16,17 +29,18 @@ export default {
 
 <style scoped>
 h4 {
-  font-size:14px;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
+  font-size:20px;
+  text-align: center;
 }
 li {
-  display: inline-block;
-  margin: 0 10px;
+  list-style:none;
+  margin:0;
+  padding: 4px;
+  font-size: 14px;
 }
-a {
-  color: #42b983;
+.board {
+  border-radius: 12px;
+  border: 3px solid black;
+  padding: 10px;
 }
 </style>
