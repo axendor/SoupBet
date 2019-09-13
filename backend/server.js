@@ -15,7 +15,7 @@ app.use(bodyParser.json({strict:true,}));
 // Check that node-adodb is installed. Used for databse management
 var ADODB = require('node-adodb');
 // Initialise connection to the database
-var database = ADODB.open('Provider=Microsoft.ACE.OLEDB.12.0;Data Source=db.accdb;Persist Security Info=False;');
+var conn = ADODB.open('Provider=Microsoft.ACE.OLEDB.12.0;Data Source=db.accdb;Persist Security Info=False;');
 
 const Object = require('./objectDefinitions')
 
@@ -28,14 +28,14 @@ app.get('/test',(req,res) => {
 });
 
 app.get('/markets',(req,res) => {
-	database
-		.query('SELECT * FROM tblMarkets')
+	conn
+		.query('SELECT * FROM TblMarkets ORDER BY MarketID ASC')
 		.then(markets_records => {
-			database
-				.query('SELECT * FROM tblOptions')
+			conn
+				.query('SELECT * FROM TblOptions')
 				.then(options_records => {
-					database
-						.query('SELECT * FROM tblBets')
+					conn
+						.query('SELECT * FROM TblBets')
 						.then(bets_records => {
 							var markets = [];
 							markets_records.forEach(market_record => {
@@ -55,21 +55,93 @@ app.get('/markets',(req,res) => {
 							});
 							res.send(markets);
 						})
-						.catch(err => {
-							console.error(err);
-						});
+						.catch(errfn);
 				})
-				.catch(err => {
-					console.error(err);
-				});
+				.catch(errfn);
 		})
-		.catch(err => {
-			console.error(err);
-		});
+		.catch(errfn);
 });
 
 app.get('/recentBets', (req,res) => {
-
+	conn
+		.query('SELECT TblBets.BetID, TblBets.Punter, TblBets.Stake, TblOptions.OptionID, TblOptions.OptionName, TblMarkets.MarketID, TblMarkets.MarketName FROM TblBets INNER JOIN (TblOptions INNER JOIN TblMarkets ON TblOptions.MarketID = TblMarkets.MarketID) ON TblBets.OptionID = TblOptions.OptionID ORDER BY TblBets.BetID DESC')
+		.then(bets => {
+			res.send(bets);
+		})
+		.catch(errfn);
 });
 
-app.get('')
+app.get('/results', (req,res) => {
+	conn
+		.query('SELECT TblMarkets.MarketID AS ID, SUM(TblBets.Stake) AS marketTotal FROM TblMarkets INNER JOIN (TblOptions INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID')
+		.then(marketsBets => {
+			conn
+				.query('SELECT TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName, SUM(TblBets.Stake) AS BetTotal FROM TblMarkets INNER JOIN ((TblOptions INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) INNER JOIN TblResults ON TblOptions.OptionID = TblResults.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID, TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName')
+				.then(results => {
+					var markets = marketsBets.slice();
+					results.forEach(result => {
+						markets.forEach(market => {
+							if(market.ID == result.MarketID){
+								market.name = result.MarketName;
+								market.res = result.OptionName;
+								market.resultTotal = result.BetTotal;
+								market.payout = market.marketTotal/market.resultTotal;
+							}
+						});
+					});
+					conn
+						.query('SELECT TblOptions.MarketID, TblBets.BetID, TblBets.Punter, TblBets.Stake FROM TblBets INNER JOIN (TblResults INNER JOIN TblOptions ON TblResults.OptionID = TblOptions.OptionID) ON TblBets.OptionID = TblResults.OptionID')
+						.then(bets => {
+							markets.forEach(market => {
+								bets.forEach(bet => {
+									if(market.ID == bet.MarketID) {
+										market.payouts = market.payouts ? market.payouts : [];
+										market.payouts.push({
+											ID: bet.BetID,
+											name: bet.Punter,
+											stake: bet.Stake,
+											payout: "$" + (bet.Stake * market.payout).toFixed(2)
+										});
+									}
+								});
+							});
+							res.send(markets);
+						})
+						.catch(errfn);
+				})
+				.catch(errfn);
+		})
+		.catch(errfn);
+});
+
+app.post('/addBet', (req,res) => {
+	conn
+		.execute('INSERT INTO TblBets(Punter,OptionID,Stake) VALUES (\"' + req.body.punterName + '\",' + req.body.optionID + ',' + req.body.stake + ')')
+		.then(data => {
+			res.send('Success');
+		})
+		.catch(errfn);
+});
+
+app.post('/deleteBet', (req,res) => {
+	conn
+		.execute('DELETE FROM TblBets WHERE BetID=' + req.body.BetID)
+		.catch(errfn);
+});
+
+function errfn(err){
+	console.error(err);
+}
+
+/*
+axios.post('http://localhost:5000/addBet', {
+	punterName: "TestAjax",
+	optionID: 4,
+	stake: 12
+})
+.then(response => {
+	this.msg = (response);
+})
+.catch(error => {
+	this.msg = (error);
+*/
