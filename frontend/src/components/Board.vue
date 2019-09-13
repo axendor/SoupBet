@@ -1,6 +1,6 @@
 <template>
   <div>
-    {{market}}
+    <h4>{{market.name}}</h4>
   </div>
 </template>
 
@@ -14,10 +14,9 @@ export default {
 
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+h4 {
+  font-size:14px;
 }
 ul {
   list-style-type: none;

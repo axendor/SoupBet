@@ -1,17 +1,38 @@
 <template>
-  <div id="app">
-    <Board :market="[1,2,3,4]"></Board>
-  </div>
+  <b-container id="app">
+    <b-row>
+      <b-col cols="6" v-bind:key="market.ID" v-for="market in markets.data">
+        <board :market="market" />
+      </b-col>
+    </b-row>
+  </b-container>
 </template>
 
 <script>
 import Board from './components/Board.vue'
+import axios from 'axios'
 
 export default {
   name: 'app',
+  data(){
+    return {
+      markets: {data:[{name:'test1'},{name:'test2'},{name:'test3'}]}
+    }
+  },
   components: {
     Board
-  }
+  },
+  mounted: function(){
+    axios
+      .get('http://localhost:5000/markets')
+      .then(res => {
+        console.log(res.data)
+        this.markets.data=res.data
+      })
+      .catch(err => {
+        console.error(err);
+      })
+  },
 }
 </script>
 
@@ -21,7 +42,5 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
