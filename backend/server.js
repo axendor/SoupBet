@@ -73,11 +73,13 @@ app.get('/recentBets', (req,res) => {
 
 app.get('/results', (req,res) => {
 	conn
-		.query('SELECT TblMarkets.MarketID AS ID, SUM(TblBets.Stake) AS marketTotal FROM TblMarkets INNER JOIN (TblOptions INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID')
+		.query('SELECT TblMarkets.MarketID AS ID, SUM(TblBets.Stake) AS marketTotal FROM TblMarkets INNER JOIN ((TblOptions INNER JOIN TblResults ON TblOptions.OptionID=TblResults.OptionID) INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID')
 		.then(marketsBets => {
+			console.log(marketsBets);
 			conn
 				.query('SELECT TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName, SUM(TblBets.Stake) AS BetTotal FROM TblMarkets INNER JOIN ((TblOptions INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) INNER JOIN TblResults ON TblOptions.OptionID = TblResults.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID, TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName')
 				.then(results => {
+					console.log(results);
 					var markets = marketsBets.slice();
 					results.forEach(result => {
 						markets.forEach(market => {
@@ -128,6 +130,30 @@ app.post('/deleteBet', (req,res) => {
 		.execute('DELETE FROM TblBets WHERE BetID=' + req.body.BetID)
 		.catch(errfn);
 });
+
+app.get('/',(req,res) => {
+	res.send('This is the backend server for soupbet!');
+});
+
+app.get('/payouts', (req,res) => {
+	conn
+		.query('SELECT TblMarkets.MarketName, TblOptions.OptionName, TblBets.Punter, Tblbets.Stake FROM TblBets INNER JOIN ((TblOptions INNER JOIN TblResults ON TblOptions.OptionID=TblResults.OptionID) INNER JOIN TblMarkets ON TblMarkets.MarketID=TblOptions.MarketID) ON TblBets.OptionID=TblOptions.OptionID WHERE TblBets.PaidOut=false')
+		.then(bets => {
+			res.send(bets);
+		})
+		.catch(errfn);
+})
+
+app.get('/payout/:BetID', (req,res) => {
+	if(req.params.BetID){
+		conn
+			.execute('UPDATE TblBets SET PaidOut=true WHERE BetID=' + req.params.BetID,'SELECT * FROM TblBets WHERE BetID=' + req.params.BetID)
+			.then(bet => {
+				res.send({betUpdated:bet,success:true});
+			})
+			.catch(errfn);
+	}
+})
 
 function errfn(err){
 	console.error(err);
