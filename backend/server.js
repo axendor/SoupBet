@@ -75,11 +75,9 @@ app.get('/results', (req,res) => {
 	conn
 		.query('SELECT TblMarkets.MarketID AS ID, SUM(TblBets.Stake) AS marketTotal FROM TblMarkets INNER JOIN ((TblOptions INNER JOIN TblResults ON TblOptions.OptionID=TblResults.OptionID) INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID')
 		.then(marketsBets => {
-			console.log(marketsBets);
 			conn
 				.query('SELECT TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName, SUM(TblBets.Stake) AS BetTotal FROM TblMarkets INNER JOIN ((TblOptions INNER JOIN TblBets ON TblOptions.OptionID = TblBets.OptionID) INNER JOIN TblResults ON TblOptions.OptionID = TblResults.OptionID) ON TblMarkets.MarketID = TblOptions.MarketID GROUP BY TblMarkets.MarketID, TblMarkets.MarketID, TblMarkets.MarketName, TblOptions.OptionName')
 				.then(results => {
-					console.log(results);
 					var markets = marketsBets.slice();
 					results.forEach(result => {
 						markets.forEach(market => {
@@ -128,6 +126,9 @@ app.post('/addBet', (req,res) => {
 app.post('/deleteBet', (req,res) => {
 	conn
 		.execute('DELETE FROM TblBets WHERE BetID=' + req.body.BetID)
+		.then(() => {
+			res.send('Success');
+		})
 		.catch(errfn);
 });
 
@@ -137,7 +138,7 @@ app.get('/',(req,res) => {
 
 app.get('/payouts', (req,res) => {
 	conn
-		.query('SELECT TblMarkets.MarketName, TblOptions.OptionName, TblBets.Punter, Tblbets.Stake FROM TblBets INNER JOIN ((TblOptions INNER JOIN TblResults ON TblOptions.OptionID=TblResults.OptionID) INNER JOIN TblMarkets ON TblMarkets.MarketID=TblOptions.MarketID) ON TblBets.OptionID=TblOptions.OptionID WHERE TblBets.PaidOut=false')
+		.query('SELECT TblBets.BetID, TblMarkets.MarketName, TblMarkets.MarketID, TblOptions.OptionName, TblBets.Punter, Tblbets.Stake FROM TblBets INNER JOIN ((TblOptions INNER JOIN TblResults ON TblOptions.OptionID=TblResults.OptionID) INNER JOIN TblMarkets ON TblMarkets.MarketID=TblOptions.MarketID) ON TblBets.OptionID=TblOptions.OptionID WHERE TblBets.PaidOut=false')
 		.then(bets => {
 			res.send(bets);
 		})
@@ -158,16 +159,3 @@ app.get('/payout/:BetID', (req,res) => {
 function errfn(err){
 	console.error(err);
 }
-
-/*
-axios.post('http://localhost:5000/addBet', {
-	punterName: "TestAjax",
-	optionID: 4,
-	stake: 12
-})
-.then(response => {
-	this.msg = (response);
-})
-.catch(error => {
-	this.msg = (error);
-*/

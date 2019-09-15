@@ -2,15 +2,8 @@
     <b-container style="overflow:hidden;" fluid id="app">
         <div id="info" style="margin:12px;">
             <h4>How this works</h4>
-            <h2>These are not the final odds.</h2>
-            <b-container fluid>
-                <ul>
-                    <li>All markets are pool markets.</li>
-                    <li>Any money in a market is split between those who bet on the winner.</li>
-                    <li>The odds shown here are from how much is in the pool currently.</li>
-                </ul>
-            </b-container>
-        </div>
+            <h2>Markets Closed.</h2>
+       </div>
         <b-row id="boardsContainer">
             <b-col style="padding:12px;" cols="3" v-bind:key="market.ID" v-for="market in markets.data">
                 <board :market="market" />
@@ -21,58 +14,36 @@
 
 <script>
 import Board from '../components/Board.vue'
-import axios from 'axios'
 
 export default {
   name: 'odds',
   data(){
     return {
-        markets: {data:[]},
         DivElmnt: null,
         ReachedMaxScroll: false,
         PreviousScrollTop: 0,
         ScrollInterval: null,
+        updateInterval: null,
     }
+  },
+  computed: {
+      markets: function(){
+          return this.$store.getters.markets;
+      },
   },
   components: {
     Board
   },
   methods:{
-        updateMarkets: function() {
-            console.log('updating');
-            axios
-                .get('http://localhost:5000/markets')
-                .then(marketRes => {
-                    axios
-                        .get('http://localhost:5000/results')
-                        .then(resultsRes => {
-                            var results = {};
-                            resultsRes.data.forEach(result => {
-                                results[result.ID] = result;
-                            })
-                            this.markets.data=marketRes.data;
-                            this.markets.data.forEach((market) => {
-                                if(results[market.ID]) market.options = [{opt:results[market.ID].res,betTotal:results[market.ID].resultTotal,payingOut:true,}]
-                                market.options.sort((a,b) => {
-                                    if(a.opt == "Any other player") return true;
-                                    return a.betTotal < b.betTotal;
-                                })
-                            })
-                        })
-                        .catch((err) => {
-                            console.error(err);
-                        });
-                })
-                .catch(err => {
-                    console.error(err);
-                })
+        marketUpdate: function(e){
+            this.$store.dispatch('inc');
         },
         scrollDiv_init: function() {
             this.DivElmnt = document.getElementById('boardsContainer'),
             
             this.DivElmnt.scrollTop = 0;
             
-            this.ScrollInterval = setInterval(this.scrollDiv, 5000);
+            this.ScrollInterval = setInterval(this.scrollDiv, 3000);
         },
         scrollDiv: function() {
             
@@ -93,11 +64,16 @@ export default {
         },
         scrollResume: function(){
             this.ScrollInterval = setInterval(this.scrollDiv, 5000);
+        },
+        marketUpdate: function(){
+            console.log('updating');
+            this.$store.dispatch('updateMarkets');
         }
   },
   mounted: function(){
-    this.updateMarkets();
     this.scrollDiv_init();
+    this.$store.dispatch('updateMarkets');
+    this.updateInterval = setInterval(this.marketUpdate,4000);
   },
 }
 </script>
@@ -107,7 +83,12 @@ export default {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
 }
 
-h4, h2 {
+h2 {
+    font-size: 42px;
+    text-align: center;
+}
+
+h4 {
     font-size: 36px;
     text-align: center;
 }

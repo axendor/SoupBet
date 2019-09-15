@@ -32,7 +32,7 @@ export default {
 
 <style scoped>
 h4 {
-  font-size: 32px;
+  font-size: 40px;
   text-align: center;
   display: block;
   background: rgb(0, 84, 158);
